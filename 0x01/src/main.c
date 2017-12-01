@@ -140,21 +140,22 @@ char* read_command(FILE* in) {
     do 
     {
         inputAt[incr - 1] = 'e';
-        if(fgets(inputAt, incr, in) == NULL) return NULL;
+        if(fgets(inputAt, incr, in) == NULL) { free(input); return NULL; } // error: free input
         if(inputAt[incr - 1] != '\0' || inputAt[incr - 2] == '\n')
             break;
-        if (inputMaxLength + INPUT_INCREMENT < inputMaxLength) // small overflow
+        if (inputMaxLength > INT_MAX - INPUT_INCREMENT) // small overflow
         {
             free(input);
             return NULL;
         }
         inputMaxLength += INPUT_INCREMENT;
-        input = realloc(input, sizeof(char) * inputMaxLength); // error: realloc
-        if (!input)
+        char* tmpinput = realloc(input, sizeof(char) * inputMaxLength); // error: check realloc // error: input = realloc not good if fail
+        if (!tmpinput)
         {
             free(input);
             return NULL;
         }
+        input = tmpinput; // error2 of tmpinput
         inputAt = input + inputMaxLength - INPUT_INCREMENT - 1; // error: not relative to input
         incr = INPUT_INCREMENT + 1;
     } while(1);
@@ -182,7 +183,7 @@ int main(int argc, char* argv[])
     {
         print_prompt(stdout);
         char* command = read_command(stdin);
-        if(command == NULL)
+        if(!command)
             break;
         if(handle_command(stdout, sc, command))
             break;
