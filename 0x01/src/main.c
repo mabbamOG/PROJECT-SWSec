@@ -5,6 +5,9 @@
 #include "sortedcontainer.h"
 #include "test.h"
 
+#include <errno.h>
+#include <limits.h>
+
 // DO NOT change this value. It does not fix your problems
 #define INPUT_INCREMENT 10
 
@@ -30,15 +33,15 @@ data* read_data(char const* command)
 {
     int age;
     char name[NAME_LENGTH];
-    char long double d = 0.0;
+    long double d = 0.0;
     char dp[11] = {'\0'};
     int n = 0;
-    int i = sscanf(buf, "%*1[iec]%*1[ ] %10[0-9]%*1[ ] %19[a-zA-Z] %n", dp, name,  &n);
+    int i = sscanf(command, "%*1[iec]%*1[ ] %10[0-9]%*1[ ] %19[a-zA-Z] %n", dp, name,  &n);
     if (i==EOF || errno!=0 || i!=2 || strlen(command)-n != 0)
         return NULL;
     sscanf(dp, "%Lf", &d);
     age = (int) d;
-    if (dp>INT_MAX || dp<1)
+    if (d>INT_MAX || d<1)
         return NULL;
     return data_new(age, name);
 }
@@ -64,18 +67,23 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
     switch(*command) 
     {
     case 'i':
+        {
         data* data = read_data(command);
         if(!data)
             return invalid_input(printFile);
         sortedcontainer_insert(sc, data);
         break;
+        }
     case 'e':
+        {
         data* data = read_data(command);
         if(!data)
             return invalid_input(printFile);
         sortedcontainer_erase(sc, data);
         break;
+        }
     case 'c':
+        {
         data* data = read_data(command);
         if(!data)
             return invalid_input(printFile);
@@ -84,6 +92,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
         else
             fprintf(printFile, "n\n");
         break;
+        }
     case 'p':
         if (command[1]!='\0')
             return invalid_input(printFile);
@@ -164,6 +173,7 @@ char* read_command(FILE* in) {
  */
 int main(int argc, char* argv[]) 
 {
+    (void)argc; (void) argv;
     sortedcontainer* sc = sortedcontainer_new();
     if (!sc)
         return fprintf(stderr, "\nError initializing container.\n");
