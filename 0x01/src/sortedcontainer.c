@@ -63,6 +63,7 @@ sortedcontainer* sortedcontainer_new()
 }
 
 struct index { node* node; node** parent;}; // TODO static?
+/*
 static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
 {
     node* n = sc->root; // not necessary, but cleaner
@@ -77,7 +78,21 @@ static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
         parent = (tmp<0 ? &(n->left) : &(n->right));
     }
     return (struct index) {.node = n, .parent = parent}; // free spot, no match
+}*/
+static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
+{
+    node** parent = &(sc->root);
+    while(*parent)
+    {
+        // keep looking for a match
+        int tmp = data_compare(data, (*parent)->data);
+        if (!tmp) // match found
+            return (struct index) {.node = *parent, .parent = parent};
+        parent = (tmp<0 ? &((*parent)->left) : &((*parent)->right));
+    }
+    return (struct index) {.node = *parent, .parent = parent}; // free spot, no match
 }
+
 
 void sortedcontainer_insert(sortedcontainer* sc, data* data) 
 {
@@ -89,7 +104,7 @@ void sortedcontainer_insert(sortedcontainer* sc, data* data)
     }
     node* n = node_new(data);
     if (n)
-        *tmp.parent = n;
+        *(tmp.parent) = n;
     else
         data_delete(data);
 }
