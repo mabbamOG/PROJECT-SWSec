@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "sortedcontainer.h"
 
@@ -18,7 +19,7 @@ int data_compare(data* d1, data* d2)
 
 // Do not change
 void data_print(data* d, FILE* f) 
-    fprintf(f, "%i %s", d->age, d->name);
+    {fprintf(f, "%i %s", d->age, d->name);}
 
 data* data_new(int age, char const* name) 
 {
@@ -33,11 +34,11 @@ data* data_new(int age, char const* name)
 }
 
 void data_delete(data* d) 
-    free(d);
+    {free(d);}
 
 node* node_new(data* d) 
 {
-    n = (node*)malloc(sizeof(node));
+    node* n = (node*)malloc(sizeof(node));
     if (n)
     {
         n->data = d;
@@ -61,7 +62,7 @@ sortedcontainer* sortedcontainer_new()
     return d;
 }
 
-struct index { node* node, node** parent}; // TODO static?
+struct index { node* node; node** parent;}; // TODO static?
 static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
 {
     node* n = sc->root; // not necessary, but cleaner
@@ -69,13 +70,13 @@ static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
     while(n)
     {
         // keep looking for a match
-        tmp = data_compare(data, n->data);
+        int tmp = data_compare(data, n->data);
         if (!tmp) // match found
-            return struct index {node = n, parent = parent};
+            return (struct index) {.node = n, .parent = parent};
         n = (tmp<0 ? n->left : n->right);
         parent = (tmp<0 ? &(n->left) : &(n->right));
     }
-    return struct index {node = n, parent = parent}; // free spot, no match
+    return (struct index) {.node = n, .parent = parent}; // free spot, no match
 }
 
 void sortedcontainer_insert(sortedcontainer* sc, data* data) 
@@ -101,23 +102,23 @@ int sortedcontainer_erase(sortedcontainer* sc, data* data) {
     // pointer switcharoo
     node* left = tmp.node->left;
     node* right = tmp.node->right;
-    *tmp.parent = left + right;
+    *tmp.parent = (left? left: right);
     if (left && right)
     {
         *tmp.parent = left;
 
         // find a free spot for "right", in the "left" subtree
         node** parent = &(tmp.node->left->right);
-        while(**parent)
-            parent = &(**parent->right);
+        while(*parent)
+            parent = &((*parent)->right);
         *parent = right;
     }
-    node_delete(node)
+    node_delete(tmp.node);
     return 1;
 }
 
 int sortedcontainer_contains(sortedcontainer* sc, data* data) 
-    return (sortedcontainer_index(sc, data).node? 1: 0);
+    {return (sortedcontainer_index(sc, data).node? 1: 0);}
 
 // Do not change
 static void node_printtree(node* n, int level, FILE* printFile) 
@@ -135,7 +136,7 @@ static void node_printtree(node* n, int level, FILE* printFile)
 
 // Do not change
 void sortedcontainer_print(sortedcontainer* sc, FILE* printFile)
-    node_printtree(sc->root, 0, printFile);
+    {node_printtree(sc->root, 0, printFile);}
 
 static void node_deletetree(node* n) 
 {
