@@ -65,7 +65,7 @@ sortedcontainer* sortedcontainer_new()
 }
 
 /** Structure used for sortedcontainer_index. */
-static struct index { node* node; node** parent;};
+struct index { node* node; node** parent;};
 
 /**
  * @brief finds a node containing @c data

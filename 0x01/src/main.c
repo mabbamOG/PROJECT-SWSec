@@ -50,7 +50,7 @@ void print_prompt(FILE* f)
  *    Due to C99 standard overflows have unexpected effect, so they must be prevented.
  *    Since scanf() does not check for them, the only way to prevent them is to store the integer in a variable of larger size (numeric or string).
  *    The C99 long long is capable of storing 11+ digit integers, without overflow.
- *    The variable has been chosen unsigned, to prevent the insertion of negative ages ("%Lu").
+ *    The variable has been chosen unsigned, to prevent the insertion of negative ages ("%llu").
  */
 data* read_data(char const* command) 
 {
@@ -67,14 +67,14 @@ data* read_data(char const* command)
     //
     // FLAGS
     // '*': discards the following match
-    // 'L': modifies the conversion from int to long long
+    // 'll': modifies the conversion from int to long long
     // <num>: indicates maximum number of character/digit occurrences for the match
     //
     // CONVERSIONS
     // '[a-z]': indicates a range of possible consecutive characters that form a string. the string will be null terminated (excluding max limit)
     // 'u': indicates an  unsigned int. The int type can be modified by a flag.
     // 'n': stores the amount of characters parsed so far into a variable. is used for checking there is no garbage left at end of string.
-    int i = sscanf(command, "%*1[iec]%*1[ ] %10Lu%*1[ ] %19[a-zA-Z] %n", &l, name,  &n);
+    int i = sscanf(command, "%*1[iec]%*1[ ] %10llu%*1[ ] %19[a-zA-Z] %n", &l, name,  &n);
 
     // check for scanf() errors: 
     // 1) EOF for an matching failure or unexpected enf of input.
@@ -83,7 +83,7 @@ data* read_data(char const* command)
     // 4) n for unexpected data after the match is done. 
     //    Should be as long as the command in case of success, to indicate all characters have been parsed.
     // 5) INT_MAX for integer overflow (since l is guaranteed to be a positive non-overflowed and any 10 digit integer).
-    if (i==EOF || errno!=0 || i!=2 || n<strlen(command) || l>INT_MAX)
+    if (i==EOF || errno!=0 || i!=2 || (unsigned)n<strlen(command) || l>INT_MAX)
         return NULL;
 
     age = (int) l;
@@ -123,6 +123,7 @@ int invalid_input(FILE* printFile)
  * 1) Use preformatted strings in all fprintf() commands, to avoid injections.
  * 2) Always check for allocation errors.
  * 3) Always remember to deallocate data that will no longer be used, to prevent memory leaks.
+ * 4) Commands p/t/x must not contain weird junk towards the end, as this is not part of the spec.
  *
  */
 int handle_command(FILE* printFile, sortedcontainer* sc, char* command) 
@@ -133,7 +134,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
         {
         // if data cannot be initialized, do nothing
         data* data = read_data(command);
-        if(!data)
+        if(!data) // fix: check for correct initialization
             return invalid_input(printFile);
         sortedcontainer_insert(sc, data);
         break;
@@ -141,22 +142,22 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
     case 'e':
         {
         data* data = read_data(command);
-        if(!data)
+        if(!data) // fix: check for correct initialization
             return invalid_input(printFile);
         sortedcontainer_erase(sc, data);
-        delete_data(data);
+        data_delete(data); // fix: destruction when ownership is not claimed
         break;
         }
     case 'c':
         {
         data* data = read_data(command);
-        if(!data)
+        if(!data) // fix: check for correct initialization
             return invalid_input(printFile);
         if(sortedcontainer_contains(sc, data))
             fprintf(printFile, "y\n");
         else
             fprintf(printFile, "n\n");
-        delete_data(data);
+        data_delete(data); // fix: destruction when ownership is not claimed
         break;
         }
     case 'p':
@@ -177,7 +178,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
         break;
     default:
         fprintf(printFile, "No such command: ");
-        fprintf(printFile, "%s", command); // fix data leak
+        fprintf(printFile, "%s", command); // fix: format string possible data leak
         fprintf(printFile, "\n");
         break;
     }
