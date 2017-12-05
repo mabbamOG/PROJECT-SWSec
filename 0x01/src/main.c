@@ -28,24 +28,68 @@ void print_prompt(FILE* f)
  *
  * TO FIX:
  *   There are two serious problems in this function that are related
+ *
+ * PROBLEMS FOUND:
+ * 1) there is no check for age>0. this has been fixed with a new scanf() format string
+ * 2) there is no check for integer overflow
+ * 2) the last "%s" in the scanf() allowed for a buffer overflow. 
+ *    This has been fixed to the current NAME_LENGTH-1 (since scanf adds \0 automatically)
+ *    While this value is embedded into the string literal, it is possible to use a macro (stringize) to make this string parametrized.
+ *    The macro has been provided below.
+ * 3) the return value for data_new() was not checked for success!
+ *
+ * SOLUTION:
+ * 1) A more robust scanf() format string has been used, to remain loyal to the original code structure.
+ *   The specification is interpreted as the following (extended) regex: ^[iec]\s+[0-9]{1,10}\s+[a-zA-Z]{1,19}\s*$
+ * 2) Scanf() is checked for errors such as correct amount of fields interpreted, strings too large, excess garbage (e.g. byte injections).
+ * 3) The Integer is checked for overflow. Due to scanf()'s fragility, a "trick" had to be used: the integer is processed as a float
+ *    number so that it may be safely checked against for overflows (floats default to inf) without losing precision 
+ *    (a long double is used for a 10-digit number). In order to prevent users from entering any kind of float, 
+ *    the input is processed as an array of digits.
  */
 data* read_data(char const* command) 
 {
-    int age;
-    char name[NAME_LENGTH];
+    // initialized variables
+    int age = 0;
+    char name[NAME_LENGTH] = {'\0'};
     long double d = 0.0;
     char dp[11] = {'\0'};
     int n = 0;
-    int i = sscanf(command, "%*1[iec]%*1[ ] %10[0-9]%*1[ ] %19[a-zA-Z] %n", dp, name,  &n);
+
+    // '%': indicates a field to be parsed and matched against
+    // ' ': indicates any amount of whitespace. is a special kind of field, not beginning with %
+    //
+    // FLAGS
+    // '*': discards the following match
+    // <num>: indicates maximum number of occurrences for the match
+    //
+    // CONVERSIONS
+    // '[a-z]': indicates a range of possible consecutive characters that form a string. the string will be null terminated
+    // 'n': stores the amount of characters parsed so far into a variable. is used for checking there is no garbage left at string ending.
+    int name_len = NAME_LENGTH -1;
+    int int_chr_len = 0;
+    char* format_str = "%*1[iec]%*1[ ] %10[0-9]%*1[ ] %19[a-zA-Z] %n"
+    int i = sscanf(command, , dp, name,  &n);
+
+    // check for scanf() errors, correct amount of read fields, and lack of unexpected values left in the string.
     if (i==EOF || errno!=0 || i!=2 || strlen(command)-n != 0)
         return NULL;
+
+    // converts the integer to a floating point number to check for overflows, and then casts to int. no precision is lost.
     sscanf(dp, "%Lf", &d);
     age = (int) d;
     if (d>INT_MAX || d<1)
         return NULL;
+
     return data_new(age, name);
 }
 
+/**
+ * @brief prints "Invalid input\n" to @c printFile stream, as per program specification
+ * this function is useful for cleaner code in handle_command() function.
+ * @param printFile FILE to print messages to
+ * @return 0, always
+ */
 int invalid_input(FILE* printFile)
 {
     fprintf(printFile, "Invalid input\n");
@@ -61,6 +105,19 @@ int invalid_input(FILE* printFile)
  *
  * TO FIX:
  *   There are three problems in this function, two of which are related
+ *
+ * PROBLEMS FOUND:
+ * 1) There was a possible data leak in the fprintf(printFile, command). This is because an attacker might place
+ *    a pre-formatted string in @c command and pop/leak values from the stack.
+ * 2) Read_data(data) was never checked for errors, this could've resulted in passing a NULL value
+ *    to functions that do not expect one.
+ * 3) Out of the functions that require initializing data, only sortedcontainer_insert claims ownership of data and will deallocate it.
+ *
+ *  SOLUTIONS:
+ * 1) Use preformatted strings in all fprintf() commands, to avoid injections.
+ * 2) Always check for allocation errors.
+ * 3) Always remember to deallocate data that is no longer used, to prevent memory leaks.
+ *
  */
 int handle_command(FILE* printFile, sortedcontainer* sc, char* command) 
 {
@@ -68,6 +125,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
     {
     case 'i':
         {
+        // if data cannot be initialized, do nothing
         data* data = read_data(command);
         if(!data)
             return invalid_input(printFile);
@@ -80,6 +138,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
         if(!data)
             return invalid_input(printFile);
         sortedcontainer_erase(sc, data);
+        delete_data(data);
         break;
         }
     case 'c':
@@ -91,9 +150,11 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
             fprintf(printFile, "y\n");
         else
             fprintf(printFile, "n\n");
+        delete_data(data);
         break;
         }
     case 'p':
+        // if the buffer does not contain only one character, do nothing.
         if (command[1]!='\0')
             return invalid_input(printFile);
         sortedcontainer_print(sc, printFile);
@@ -110,7 +171,7 @@ int handle_command(FILE* printFile, sortedcontainer* sc, char* command)
         break;
     default:
         fprintf(printFile, "No such command: ");
-        fprintf(printFile, "%s", command); // data leak
+        fprintf(printFile, "%s", command); // fix data leak
         fprintf(printFile, "\n");
         break;
     }
@@ -140,7 +201,12 @@ char* read_command(FILE* in) {
     do 
     {
         inputAt[incr - 1] = 'e';
-        if(fgets(inputAt, incr, in) == NULL) { free(input); return NULL; } // error: free input
+        if(fgets(inputAt, incr, in) == NULL) 
+        { 
+            if (inputAt>input) break; // check that this isn't successive EOF
+            free(input); 
+            return NULL; 
+        } // error: free input
         if(inputAt[incr - 1] != '\0' || inputAt[incr - 2] == '\n')
             break;
         if (inputMaxLength > INT_MAX - INPUT_INCREMENT) // small overflow
@@ -186,7 +252,10 @@ int main(int argc, char* argv[])
         if(!command)
             break;
         if(handle_command(stdout, sc, command))
+        {
+            free(command);
             break;
+        }
         free(command); // memory leak
     }
     sortedcontainer_delete(sc);
