@@ -1,5 +1,7 @@
-// ! all input data assumed to be valid
-// TODO: 
+// !!! all input data assumed to be valid
+// !!! recursion has been avoided in all cases
+
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,46 +64,52 @@ sortedcontainer* sortedcontainer_new()
     return d;
 }
 
-struct index { node* node; node** parent;}; // TODO static?
-/*
+/** Structure used for sortedcontainer_index. */
+static struct index { node* node; node** parent;};
+
+/**
+ * @brief finds a node containing @c data
+ * @param sc The sorted container to look in
+ * @param data The data to look for
+ * @return an index struct, containing a node address
+ * if one is found, and its "parent" (i.e. the pointer to
+ * the memory where node's pointer is stored).
+ * If it is not found, node is the latest NULL leaf in
+ * the tree where data is supposed to go.
+ */
 static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
 {
-    node* n = sc->root; // not necessary, but cleaner
-    node** parent = &(sc->root);
-    while(n)
-    {
-        // keep looking for a match
-        int tmp = data_compare(data, n->data);
-        if (!tmp) // match found
-            return (struct index) {.node = n, .parent = parent};
-        n = (tmp<0 ? n->left : n->right);
-        parent = (tmp<0 ? &(n->left) : &(n->right));
-    }
-    return (struct index) {.node = n, .parent = parent}; // free spot, no match
-}*/
-static struct index sortedcontainer_index(sortedcontainer*sc, data* data)
-{
+    // initialize parent with the memory where the root pointer is
     node** parent = &(sc->root);
     while(*parent)
     {
-        // keep looking for a match
+        // keep looking for a perfect match
         int tmp = data_compare(data, (*parent)->data);
         if (!tmp) // match found
             return (struct index) {.node = *parent, .parent = parent};
+
+        // update parent with left or right node's pointer address.
         parent = (tmp<0 ? &((*parent)->left) : &((*parent)->right));
     }
-    return (struct index) {.node = *parent, .parent = parent}; // free spot, no match
+    // free spot = no match
+    return (struct index) {.node = *parent, .parent = parent};
 }
 
 
 void sortedcontainer_insert(sortedcontainer* sc, data* data) 
 {
     struct index tmp = sortedcontainer_index(sc, data);
+
+    // if there is a match, do nothing
+    // data must also be deleted due to ownership claim
     if (tmp.node)
     {
         data_delete(data);
         return;
     }
+
+    // insert n where tmp.node was previously NULL
+    // by using its "parent" pointer
     node* n = node_new(data);
     if (n)
         *(tmp.parent) = n;
@@ -111,21 +119,31 @@ void sortedcontainer_insert(sortedcontainer* sc, data* data)
 
 int sortedcontainer_erase(sortedcontainer* sc, data* data) {
     struct index tmp = sortedcontainer_index(sc, data);
+
+    // if not found, exit
     if(!tmp.node)
         return 0;
 
-    // pointer switcharoo
+    // pointer switcharoo, for convenience
     node* left = tmp.node->left;
     node* right = tmp.node->right;
+
+    // assume one branch is NULL
     *tmp.parent = (left? left: right);
+
+    // if both branches exist, choose LEFT and then
+    // move RIGHT to the right-most available leaf
     if (left && right)
     {
         *tmp.parent = left;
 
         // find a free spot for "right", in the "left" subtree
+        // "parent" must be derefenced, just like in function
+        // sortedcontainer_index()
         node** parent = &(tmp.node->left->right);
         while(*parent)
             parent = &((*parent)->right);
+
         *parent = right;
     }
     node_delete(tmp.node);
@@ -133,6 +151,7 @@ int sortedcontainer_erase(sortedcontainer* sc, data* data) {
 }
 
 int sortedcontainer_contains(sortedcontainer* sc, data* data) 
+    // if there was no match, index.node is NULL
     {return (sortedcontainer_index(sc, data).node? 1: 0);}
 
 // Do not change
