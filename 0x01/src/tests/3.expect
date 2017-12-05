@@ -1,0 +1,112 @@
+#!/usr/bin/expect
+
+set timeout 2
+
+spawn ./sint
+expect_after timeout {send_user "\nERROR: expect timeout\n"}
+
+expect "> "
+
+# insert data
+expect_after timeout {send_user "\nERROR: did not receive correct data\n"}
+send "p\n"
+expect " (nil)"
+send "i 123 babbo\n"
+expect "> "
+send "p\n"
+expect " 123 babbo"
+expect "  (nil)"
+expect "  (nil)"
+
+# insert more data
+send "i 2147483647 babbo\n"
+expect "> "
+send "p\n"
+expect " 123 babbo"
+expect " (nil)"
+expect " 2147483647 babbo"
+expect "  (nil)"
+expect "  (nil)"
+
+# insert big amounts of data
+send "i 10 Ten\n"
+expect "> "
+send "i 2 Two\n"
+expect "> "
+send "i 10 Ten\n"
+expect "> "
+send "i 20 Twenty\n"
+expect "> "
+send "i 5 Five\n"
+expect "> "
+send "i 4 Four\n"
+expect "> "
+send "i 3 Three\n"
+expect "> "
+send "i 3 three\n"
+expect "> "
+send "i 2 Two\n"
+expect "> "
+send "p\n"
+expect " 123 babbo"
+expect "  10 Ten"
+expect "   2 Two"
+expect "    (nil)"
+expect "    5 Five"
+expect "     4 Four"
+expect "      3 Three"
+expect "       (nil)"
+expect "       3 three"
+expect "        (nil)"
+expect "        (nil)"
+expect "      (nil)"
+expect "     (nil)"
+expect "   20 Twenty"
+expect "    (nil)"
+expect "    (nil)"
+expect "  2147483647 babbo"
+expect "   (nil)"
+expect "   (nil)"
+
+# insert invalid data
+expect_after timeout {send_user "\nERROR: did not receive input error\n"}
+send "x 123 babbo\n"
+expect "Invalid input"
+send "i 2147483648 babbo\n"
+expect "Invalid input"
+send "i 214748364809231840932409832098420983 babbo\n"
+expect "Invalid input"
+send "i -1 babbo\n"
+expect "Invalid input"
+send "i -2147483648 babbo\n"
+expect "Invalid input"
+send "i 123 babboaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+expect "Invalid input"
+send "i 123 babboaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa              \n"
+expect "Invalid input"
+send "  i 123 babbo\n"
+expect "No such command:"
+
+# contains
+expect_after timeout {send_user "\nERROR: tree did not contain right values\n"}
+send "c 2147483647 babbo\n"
+expect "y"
+send "c 12 hello\n"
+expect "n"
+send "c 123 babbo\n"
+expect "y"
+
+# tests
+expect_after timeout {send_user "\nERROR: tests did not pass\n"}
+send "t\n"
+expect "Testing..."
+expect "\\\[1/5\\\] PASS"
+expect "\\\[2/5\\\] PASS"
+expect "\\\[3/5\\\] PASS"
+expect "\\\[4/5\\\] PASS"
+expect "\\\[5/5\\\] PASS"
+
+# quit
+expect_after timeout {send_user "\nERROR: expecting termination\n"}
+send "x\n"
+expect "Bye."

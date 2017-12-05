@@ -1,4 +1,5 @@
-CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address
+#CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address
+CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0
 OBJ=sortedcontainer.o \
     main.o \
 	test.o
