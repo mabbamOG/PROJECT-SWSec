@@ -7,7 +7,8 @@ OBJOK=../../teacher/assignment1/sortedcontainer_ok.o \
     ../../teacher/assignment1/main_ok.o \
 	test.o
 
-CC=gcc
+#CC=gcc
+CC=afl-gcc
 
 SRC=$(OBJ:.o=.c)
 
