@@ -1,4 +1,4 @@
-CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address
+CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address,undefined,fuzzer -fsanitize-coverage=trace-pc-guard
 #CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0
 OBJ=sortedcontainer.o \
     main.o \
@@ -8,7 +8,8 @@ OBJOK=../../teacher/assignment1/sortedcontainer_ok.o \
 	test.o
 
 #CC=gcc
-CC=afl-gcc
+CC=clang
+#CC=afl-gcc
 
 SRC=$(OBJ:.o=.c)
 
