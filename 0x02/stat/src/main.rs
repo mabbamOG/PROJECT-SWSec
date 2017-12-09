@@ -23,7 +23,11 @@ fn main()
     let mut d_words = HashMap::new();
     for line in file.lines()
     {
-        let line = line.unwrap();
+        let line = match line
+        {
+            Ok(line) => line,
+            _ => {eprintln!("ERROR: file not UTF8");return}
+        };
         for word in line.split_whitespace().map(|s| s.to_lowercase())
         {
             *d_words.entry(word.to_owned()).or_insert(0) += 1;

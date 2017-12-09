@@ -13,9 +13,13 @@ except:
 # GEN DATA
 d_words = {}
 with f:
-    for line in f:
-       for word in map(str.lower, line.split()):
-            d_words[word] = 1 if word not in d_words else d_words[word]+1
+    try:
+        for line in f:
+           for word in map(str.lower, line.split()):
+                d_words[word] = 1 if word not in d_words else d_words[word]+1
+    except:
+        print('ERROR: file is not UTF8')
+        sys.exit(1)
 d_lengths = {}
 for word, count in d_words.items():
     d_lengths[len(word)] = count if len(word) not in d_lengths else d_lengths[len(word)] + count
