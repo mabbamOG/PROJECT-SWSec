@@ -29,7 +29,7 @@ tot = sum(d_lengths.values())
 if tot == 0:
     print('ERROR: file is empty')
     sys.exit(1)
-avg = sum(k*v for k,v in d_lengths.items()) // sum(d_words.values())
+avg = sum(k*v for k,v in d_lengths.items()) // tot
 stat = sorted(d_lengths.items())
 popular = list(sorted(d_words.items(), key=lambda t:t[1], reverse=True))[:10]
 

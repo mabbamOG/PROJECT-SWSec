@@ -50,12 +50,15 @@ fn main()
         0 => { eprintln!("NOTE: file is empty, program will abort!"); return; }
         x => x
     };
+    /*
     let avg = 
     {
         let lenwsum = d_lengths.iter().fold(0, |prev,(value, weight)| prev + value*weight);
         let weightsum :u64  = d_lengths.values().sum();
         lenwsum / weightsum
     };
+    */
+    let avg = d_lengths.iter().fold(0, |prev,(value, weight)| prev + value*weight) / tot;
     let stat= 
     {
         let mut stat:Vec<_> = d_lengths.iter().collect();
