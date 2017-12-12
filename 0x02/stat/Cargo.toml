@@ -4,3 +4,6 @@ version = "0.1.0"
 authors = ["@mabbamOG <mariobarbara@protonmail.ch>"]
 
 [dependencies]
+
+[profile.release]
+lto = true

@@ -50,14 +50,6 @@ fn main()
         0 => { eprintln!("NOTE: file is empty, program will abort!"); return; }
         x => x
     };
-    /*
-    let avg = 
-    {
-        let lenwsum = d_lengths.iter().fold(0, |prev,(value, weight)| prev + value*weight);
-        let weightsum :u64  = d_lengths.values().sum();
-        lenwsum / weightsum
-    };
-    */
     let avg = d_lengths.iter().fold(0, |prev,(value, weight)| prev + value*weight) / tot;
     let stat= 
     {
@@ -79,11 +71,11 @@ fn main()
     println!("\nTop Lengths:");
     for (len, num) in stat
     {
-        println!("{:3} chars => {:5}", len, num);
+        println!("{:3} chars => {:5} times", len, num);
     };
     println!("\nTop Words:");
-    for (i,&(word, num)) in (1..).zip(popular)
+    for (i,&&(word, num)) in popular.iter().enumerate()
     {
-        println!("{:2}. {:10} => {:5}", i, word, num);
+        println!("{:#>2}. {:20} => {:5} times", i+1, word, num);
     };
 }
