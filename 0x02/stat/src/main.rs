@@ -1,9 +1,19 @@
+#![feature(slice_concat_ext)]
 // NEED TO CONSIDER SPECIAL CHARS + ELLIPSIS!!!
 use std::io::BufReader;
 use std::io::BufRead;
 use std::fs::File;
 use std::collections::HashMap;
 use std::env::args;
+
+// ADVANGES: full unicode support (e.g. chinese/thai or difficult languages) + proper stripping out
+// of non-unicode-word special characters
+// ISSUES:
+// 1) speed. lookups into word breaks are performed w/ trees instead of hash tables
+// 2) chinese cannot be split with the standard unicode UAX 29 algorithm. a separate dictionary for
+//    chinese words must be implemented, which is outside the scope of this project
+extern crate unicode_segmentation;
+use unicode_segmentation::UnicodeSegmentation;
 
 fn main()
 {
@@ -25,10 +35,11 @@ fn main()
     {
         let line = match line
         {
-            Ok(line) => line,
+            Ok(line) => line.to_lowercase(),
             _ => {eprintln!("ERROR: file not UTF8");return}
         };
-        for word in line.split_whitespace().map(|s| s.to_lowercase())
+        //for word in line.split_whitespace() // does not handle special languages, but is faster
+        for word in UnicodeSegmentation::unicode_words(&line[..])
         {
             *d_words.entry(word.to_owned()).or_insert(0) += 1;
         }
