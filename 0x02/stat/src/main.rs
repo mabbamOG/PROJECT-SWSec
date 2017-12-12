@@ -77,16 +77,21 @@ fn main()
     let popular:Vec<_> = popular.iter().take(10).collect();
 
     // OUTPUT
-    println!("Total Words: {}", tot);
-    println!("\nAverage Length: {}", avg);
-    println!("\nTop Lengths:");
+    let max_width : usize= match popular.iter().map(|t| t.0.len()).max() 
+    {
+        Some(n) if n<=30 => n,
+        _ => 10
+    };
+    println!(">>> Total Words: {}", tot);
+    println!(">>> Average Length: {}", avg);
+    println!(">>> Top Lengths:");
     for (len, num) in stat
     {
-        println!("{:3} chars => {:5} times", len, num);
+        println!("  {:3} chars => {:5} times", len, num);
     };
-    println!("\nTop Words:");
+    println!(">>> Top Words:");
     for (i,&&(word, num)) in popular.iter().enumerate()
     {
-        println!("{:#>2}. {:20} => {:5} times", i+1, word, num);
+        println!("  {:#>2}. {:width$} => {:5} times", i+1, word, num, width=max_width);
     };
 }
