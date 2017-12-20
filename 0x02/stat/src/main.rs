@@ -1,12 +1,10 @@
-#![feature(slice_concat_ext)]
-// NEED TO CONSIDER SPECIAL CHARS + ELLIPSIS!!!
 use std::io::BufReader;
 use std::io::BufRead;
 use std::fs::File;
 use std::collections::HashMap;
 use std::env::args;
 
-// ADVANGES: full unicode support (e.g. chinese/thai or difficult languages) + proper stripping out
+// ADVANGES: full unicode support (e.g. arabic/thai or difficult languages) + proper stripping out
 // of non-unicode-word special characters
 // ISSUES:
 // 1) speed. lookups into word breaks are performed w/ trees instead of hash tables

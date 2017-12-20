@@ -1,5 +1,5 @@
-CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address,undefined,fuzzer -fsanitize-coverage=trace-pc-guard
-#CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0
+#CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0 -fsanitize=address,undefined,fuzzer -fsanitize-coverage=trace-pc-guard
+CFLAGS=-std=c99 -Wall -Werror -pedantic -Wextra -g -O0
 OBJ=sortedcontainer.o \
     main.o \
 	test.o
